@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>MedTrack</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<h1>Medication Adherence & Dose Error Tracking</h1>
+
+<div class="container">
+
+<h2>Prescription Configuration</h2>
+
+<input id="patient" placeholder="Patient Name">
+<input id="drug" placeholder="Drug Name">
+<input id="dose" placeholder="Dosage (mg)">
+<input id="frequency" placeholder="Times per day">
+<input id="duration" placeholder="Duration (days)">
+<input id="startTime" type="time">
+
+<button onclick="createSchedule()">Start Tracking</button>
+
+<hr>
+
+<h2>Live Dashboard</h2>
+
+<div class="dashboard">
+
+<div class="card">
+<h3>Total Doses</h3>
+<p id="total">0</p>
+</div>
+
+<div class="card">
+<h3>Taken</h3>
+<p id="taken">0</p>
+</div>
+
+<div class="card">
+<h3>Missed</h3>
+<p id="missed">0</p>
+</div>
+
+<div class="card">
+<h3>Late</h3>
+<p id="late">0</p>
+</div>
+
+</div>
+
+<h3>Adherence</h3>
+<p id="adherence">0%</p>
+
+<div id="alerts"></div>
+
+<hr>
+
+<h2>Dose Schedule</h2>
+<div id="schedule"></div>
+
+<hr>
+
+<h2>Timeline</h2>
+<ul id="timeline"></ul>
+
+</div>
+
+<script src="app.js"></script>
+
+</body>
+</html>
