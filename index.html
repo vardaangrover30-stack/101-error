@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MedTrack — Medication Adherence System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">
+        <div class="logo-icon">⚕</div>
+        <div>
+          <div class="logo-text">MedTrack</div>
+          <div class="logo-sub">Health Monitor</div>
+        </div>
+      </div>
+    </div>
+    <nav class="nav">
+      <div class="nav-section">Main</div>
+      <div class="nav-item active" data-view="dashboard"><span class="nav-icon">◉</span>Dashboard</div>
+      <div class="nav-item" data-view="prescriptions"><span class="nav-icon">⊕</span>Prescriptions</div>
+      <div class="nav-item" data-view="schedule"><span class="nav-icon">◫</span>Schedule</div>
+      <div class="nav-section">Insights</div>
+      <div class="nav-item" data-view="doselog"><span class="nav-icon">≡</span>Dose Log<span class="nav-badge" id="missed-badge">0</span></div>
+      <div class="nav-item" data-view="reports"><span class="nav-icon">◈</span>Reports</div>
+      <div class="nav-section">System</div>
+      <div class="nav-item" data-view="settings"><span class="nav-icon">⚙</span>Settings</div>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="user-card">
+        <div class="avatar" id="avatar-initials">JD</div>
+        <div style="flex:1;overflow:hidden">
+          <div class="user-name" id="sidebar-username">John Doe</div>
+          <div class="user-id" id="sidebar-patientid">Patient ID: 8821</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="header">
+      <div class="header-left">
+        <div class="page-title" id="header-title">Dashboard</div>
+        <div class="status-pill">● System Active</div>
+      </div>
+      <div class="header-right">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search medications..." id="search-input"/>
+        </div>
+        <button class="icon-btn" id="notif-btn" title="Alerts">🔔<span class="notif-dot" id="notif-dot" style="display:none"></span></button>
+        <button class="icon-btn" id="theme-btn" title="Toggle theme">🌙</button>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- DASHBOARD -->
+      <div class="view active" id="view-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-top">
+              <div class="stat-icon" style="background:var(--blue-bg);color:var(--blue)">📊</div>
+              <div class="stat-badge" id="adh-badge" style="background:var(--green-bg);color:var(--green)">—</div>
+            </div>
+            <div class="stat-label">Adherence Rate</div>
+            <div class="stat-value" id="stat-adherence">—%</div>
+            <div class="stat-sub">All time</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-top">
+              <div class="stat-icon" style="background:var(--orange-bg);color:var(--orange)">⏰</div>
+            </div>
+            <div class="stat-label">Upcoming Today</div>
+            <div class="stat-value" id="stat-upcoming">—</div>
+            <div class="stat-sub">doses remaining</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-top">
+              <div class="stat-icon" style="background:var(--red-bg);color:var(--red)">✗</div>
+              <div class="stat-badge" id="miss-badge2" style="background:var(--red-bg);color:var(--red)">—</div>
+            </div>
+            <div class="stat-label">Missed Today</div>
+            <div class="stat-value" id="stat-missed">—</div>
+            <div class="stat-sub">doses</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-top">
+              <div class="stat-icon" style="background:#FFF5E8;color:#C09820">🔥</div>
+              <div class="streak-badge" id="streak-badge">0</div>
+            </div>
+            <div class="stat-label">Adherence Streak</div>
+            <div class="stat-value" id="stat-streak">— Days</div>
+            <div class="stat-sub">consecutive on-time</div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div style="display:flex;flex-direction:column;gap:18px">
+            <div class="card">
+              <div class="card-head">
+                <span class="card-title">Today's Schedule</span>
+                <button class="btn btn-ghost btn-sm" onclick="navigate('schedule')">View All →</button>
+              </div>
+              <div class="card-body">
+                <div class="timeline" id="today-timeline"></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head">
+                <span class="card-title">Weekly Adherence Trend</span>
+                <span style="font-size:11.5px;color:var(--text3)" id="week-summary"></span>
+              </div>
+              <div class="card-body">
+                <div class="bar-chart" id="weekly-chart"></div>
+                <div class="chart-labels" id="weekly-labels"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="right-col">
+            <div class="log-panel">
+              <div class="log-head">
+                <span style="font-size:17px">✍</span>
+                <span class="log-head-text">Log a Dose</span>
+              </div>
+              <div class="log-body">
+                <p>Select medication and mark your intake</p>
+                <select class="form-select" id="log-select"><option value="">— Select medication —</option></select>
+                <div class="status-grid">
+                  <div class="status-opt" data-status="onTime" onclick="selectStatus(this)">
+                    <span class="opt-icon" style="color:var(--green)">✔</span><span class="opt-label">On Time</span>
+                  </div>
+                  <div class="status-opt" data-status="late" onclick="selectStatus(this)">
+                    <span class="opt-icon" style="color:var(--orange)">⏱</span><span class="opt-label">Late</span>
+                  </div>
+                  <div class="status-opt" data-status="skipped" onclick="selectStatus(this)">
+                    <span class="opt-icon" style="color:var(--red)">✕</span><span class="opt-label">Skipped</span>
+                  </div>
+                  <div class="status-opt" data-status="other" onclick="selectStatus(this)">
+                    <span class="opt-icon" style="color:var(--text3)">?</span><span class="opt-label">Other</span>
+                  </div>
+                </div>
+                <button class="confirm-btn" onclick="confirmLog()">Confirm Entry</button>
+              </div>
+            </div>
+            <div id="alerts-container"></div>
+            <div class="card">
+              <div class="card-head"><span class="card-title">Monthly Breakdown</span></div>
+              <div class="card-body">
+                <div class="breakdown-item">
+                  <div class="breakdown-row"><span style="color:var(--text2)">Perfect Days</span><span class="breakdown-val" id="perf-days">—</span></div>
+                  <div class="progress-track"><div class="progress-fill" id="perf-bar" style="background:var(--green);width:0%"></div></div>
+                </div>
+                <div class="breakdown-item" style="margin-top:12px">
+                  <div class="breakdown-row"><span style="color:var(--text2)">Late Doses</span><span class="breakdown-val" id="late-doses">—</span></div>
+                  <div class="progress-track"><div class="progress-fill" id="late-bar" style="background:var(--orange);width:0%"></div></div>
+                </div>
+                <div class="breakdown-item" style="margin-top:12px">
+                  <div class="breakdown-row"><span style="color:var(--text2)">Missed Doses</span><span class="breakdown-val" id="total-missed-month">—</span></div>
+                  <div class="progress-track"><div class="progress-fill" id="missed-bar" style="background:var(--red);width:0%"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRESCRIPTIONS -->
+      <div class="view" id="view-prescriptions">
+        <div class="section-head">
+          <span class="section-title">Prescriptions</span>
+          <button class="btn btn-primary" onclick="openAddRx()">+ Add Prescription</button>
+        </div>
+        <div class="rx-grid" id="rx-grid"></div>
+      </div>
+
+      <!-- SCHEDULE -->
+      <div class="view" id="view-schedule">
+        <div class="section-head">
+          <span class="section-title">Dose Schedule</span>
+          <select class="form-select" style="width:auto;margin:0" id="schedule-filter">
+            <option value="today">Today</option>
+            <option value="week">This Week</option>
+            <option value="all">All Upcoming</option>
+          </select>
+        </div>
+        <div class="card"><div class="card-body"><div id="schedule-list" class="timeline"></div></div></div>
+      </div>
+
+      <!-- DOSE LOG -->
+      <div class="view" id="view-doselog">
+        <div class="section-head">
+          <span class="section-title">Dose Log</span>
+          <select class="form-select" style="width:auto;margin:0" id="log-filter">
+            <option value="all">All</option>
+            <option value="onTime">On Time</option>
+            <option value="late">Late</option>
+            <option value="skipped">Missed/Skipped</option>
+          </select>
+        </div>
+        <div class="dose-log-list" id="doselog-list"></div>
+      </div>
+
+      <!-- REPORTS -->
+      <div class="view" id="view-reports">
+        <div class="section-head">
+          <span class="section-title">Reports & Analytics</span>
+          <button class="btn btn-ghost btn-sm" onclick="printReport()">⬇ Export</button>
+        </div>
+        <div class="report-grid" id="report-stats"></div>
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-head"><span class="card-title">Medication-wise Adherence</span></div>
+          <div class="card-body"><div class="med-adherence-list" id="med-adherence-list"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">Safety Alerts Summary</span></div>
+          <div class="card-body" id="safety-summary"></div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="view" id="view-settings">
+        <div class="section-head"><span class="section-title">Settings</span></div>
+        <div class="settings-section">
+          <div class="settings-section-head">Patient Profile</div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">Patient Name</div><div class="settings-row-sub">Your display name</div></div>
+            <input class="form-input" style="width:190px" id="setting-name" placeholder="Full name"/>
+          </div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">Patient ID</div></div>
+            <input class="form-input" style="width:190px" id="setting-id" placeholder="Patient ID"/>
+          </div>
+          <div class="settings-row"><div></div><button class="btn btn-primary btn-sm" onclick="saveProfile()">Save Profile</button></div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-head">Preferences</div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">Dark Mode</div><div class="settings-row-sub">Switch to dark theme</div></div>
+            <div class="toggle" id="dark-toggle" onclick="toggleTheme()"></div>
+          </div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">Reminder Simulation</div><div class="settings-row-sub">Alerts for upcoming doses</div></div>
+            <div class="toggle on" id="reminder-toggle" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">Caregiver Mode</div><div class="settings-row-sub">Read-only monitoring view</div></div>
+            <div class="toggle" id="caregiver-toggle" onclick="toggleCaregiver(this)"></div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-head">Data Management</div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">Clear All Data</div><div class="settings-row-sub">Reset everything</div></div>
+            <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red)" onclick="clearData()">Clear Data</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Rx Modal -->
+<div class="modal-overlay hidden" id="rx-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title">Add Prescription</span>
+      <button class="modal-close" onclick="closeModal('rx-modal')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Drug Name *</label><input class="form-input" id="rx-name" placeholder="e.g. Metformin"/></div>
+      <div class="form-group"><label class="form-label">Dosage *</label><input class="form-input" id="rx-dosage" placeholder="e.g. 500mg"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Frequency (per day) *</label><input class="form-input" type="number" id="rx-freq" min="1" max="6" value="1"/></div>
+      <div class="form-group"><label class="form-label">Duration (days) *</label><input class="form-input" type="number" id="rx-duration" min="1" value="30"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Start Date *</label><input class="form-input" type="date" id="rx-start"/></div>
+      <div class="form-group"><label class="form-label">First Dose Time *</label><input class="form-input" type="time" id="rx-time" value="08:00"/></div>
+    </div>
+    <div class="form-group"><label class="form-label">Instructions</label><input class="form-input" id="rx-instructions" placeholder="e.g. Take with food"/></div>
+    <div class="form-group"><label class="form-label">Form</label>
+      <select class="form-input" id="rx-form"><option>Oral Tablet</option><option>Capsule</option><option>Liquid</option><option>Injection</option><option>Topical</option></select>
+    </div>
+    <button class="confirm-btn" onclick="addPrescription()">Add & Generate Schedule</button>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ── STATE ──
+const S = {
+  profile: { name:'John Doe', patientId:'8821' },
+  medications: [],
+  schedule: [],
+  logs: [],
+  alerts: [],
+  caregiverMode: false
+};
+
+// ── PERSISTENCE ──
+function save() {
+  try { localStorage.setItem('mt3', JSON.stringify(S)); } catch(e){}
+}
+function load() {
+  try {
+    const d = localStorage.getItem('mt3');
+    if (d) {
+      const p = JSON.parse(d);
+      Object.assign(S, p);
+      S.schedule.forEach(s => { s.scheduledTime = new Date(s.scheduledTime); });
+      S.logs.forEach(l => { l.loggedAt = new Date(l.loggedAt); });
+    } else { seed(); }
+  } catch(e) { seed(); }
+}
+function seed() {
+  const today = new Date().toISOString().split('T')[0];
+  S.medications = [
+    { id:'med1', name:'Metformin', dosage:'500mg', form:'Oral Tablet', frequency:2, duration:30, startDate:today, times:['08:00','20:00'], instructions:'Take with food', locked:true },
+    { id:'med2', name:'Lisinopril', dosage:'10mg', form:'Oral Tablet', frequency:1, duration:30, startDate:today, times:['13:00'], instructions:'', locked:true },
+    { id:'med3', name:'Atorvastatin', dosage:'20mg', form:'Oral Tablet', frequency:1, duration:30, startDate:today, times:['20:00'], instructions:'Take at bedtime', locked:true }
+  ];
+  genAllSchedules();
+  // Seed: log morning metformin as on time
+  const now = new Date();
+  S.schedule.forEach(d => {
+    const t = new Date(d.scheduledTime);
+    if (t.toDateString()===now.toDateString() && d.name==='Metformin' && t.getHours()===8) {
+      S.logs.push({ id:uid(), doseId:d.id, status:'onTime', loggedAt:new Date(t.getTime()+5*60000), medId:d.medId, medName:d.name });
+    }
+  });
+  save();
+}
+
+// ── UTILS ──
+function uid() { return Math.random().toString(36).slice(2,9); }
+function fmtDate(d) { return new Date(d).toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'}); }
+function fmtTime(d) {
+  if (typeof d === 'string') {
+    const [h,m] = d.split(':'); const hh=+h;
+    return ((hh%12)||12)+':'+m+(hh>=12?' PM':' AM');
+  }
+  return new Date(d).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+}
+
+// ── SCHEDULE ──
+function genSchedule(med) {
+  const start = new Date(med.startDate+'T00:00:00');
+  for (let i=0; i<med.duration; i++) {
+    const day = new Date(start); day.setDate(day.getDate()+i);
+    med.times.forEach(t => {
+      const [h,m] = t.split(':');
+      const dt = new Date(day); dt.setHours(+h,+m,0,0);
+      const id = med.id+'_'+dt.getTime();
+      if (!S.schedule.find(s=>s.id===id))
+        S.schedule.push({ id, medId:med.id, name:med.name, dosage:med.dosage, scheduledTime:dt });
+    });
+  }
+}
+function genAllSchedules() { S.schedule=[]; S.medications.forEach(genSchedule); }
+function computeTimes(freq, firstTime) {
+  const [h,m]=firstTime.split(':').map(Number), gap=Math.floor(24/freq), times=[firstTime];
+  for (let i=1;i<freq;i++) times.push(String((h+gap*i)%24).padStart(2,'0')+':'+String(m).padStart(2,'0'));
+  return times;
+}
+
+// ── METRICS ──
+function doseStatus(dose) {
+  const log = S.logs.filter(l=>l.doseId===dose.id).sort((a,b)=>new Date(b.loggedAt)-new Date(a.loggedAt))[0];
+  if (log) return log.status;
+  return new Date(dose.scheduledTime) < new Date() ? 'missed' : 'upcoming';
+}
+function calcMetrics() {
+  let taken=0,missed=0,upcoming=0,todayT=0,todayM=0,todayU=0;
+  const today=new Date().toDateString();
+  S.schedule.forEach(d => {
+    const s=doseStatus(d), isT=new Date(d.scheduledTime).toDateString()===today;
+    if(s==='onTime'||s==='late'){taken++;if(isT)todayT++;}
+    else if(s==='missed'||s==='skipped'){missed++;if(isT)todayM++;}
+    else{upcoming++;if(isT)todayU++;}
+  });
+  const adh = taken+missed>0 ? Math.round(taken/(taken+missed)*100) : 0;
+  return {taken,missed,upcoming,adh,todayT,todayM,todayU};
+}
+function calcStreak() {
+  const days={};
+  S.schedule.forEach(d => {
+    const k=new Date(d.scheduledTime).toDateString();
+    if(!days[k]) days[k]={t:0,on:0};
+    days[k].t++;
+    if(doseStatus(d)==='onTime') days[k].on++;
+  });
+  let streak=0;
+  for (const k of Object.keys(days).sort((a,b)=>new Date(b)-new Date(a))) {
+    if(days[k].t>0&&days[k].on===days[k].t) streak++;
+    else break;
+  }
+  return streak;
+}
+function calcWeekly() {
+  const labels=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], now=new Date();
+  return labels.map((l,i) => {
+    const day=new Date(now); day.setDate(now.getDate()-((now.getDay()-i+7)%7));
+    const ds=day.toDateString();
+    const doses=S.schedule.filter(d=>new Date(d.scheduledTime).toDateString()===ds);
+    const taken=doses.filter(d=>{const s=doseStatus(d);return s==='onTime'||s==='late';}).length;
+    const pct=doses.length>0?Math.round(taken/doses.length*100):0;
+    return {l, pct, isFuture:day>now};
+  });
+}
+function calcMonthly() {
+  const now=new Date(), days={};
+  S.schedule.forEach(d => {
+    const dt=new Date(d.scheduledTime);
+    if(dt.getMonth()!==now.getMonth()) return;
+    const k=dt.toDateString();
+    if(!days[k]) days[k]={t:0,on:0,late:0,miss:0};
+    days[k].t++;
+    const s=doseStatus(d);
+    if(s==='onTime') days[k].on++;
+    else if(s==='late') days[k].late++;
+    else if(s==='missed'||s==='skipped') days[k].miss++;
+  });
+  let perfect=0,late=0,missed=0,total=0;
+  Object.values(days).forEach(d=>{
+    total++;
+    if(d.t>0&&d.on===d.t) perfect++;
+    late+=d.late; missed+=d.miss;
+  });
+  return {perfect,late,missed,total};
+}
+function detectAlerts() {
+  S.alerts=[];
+  S.medications.forEach(med => {
+    const doses=S.schedule.filter(d=>d.medId===med.id).sort((a,b)=>new Date(b.scheduledTime)-new Date(a.scheduledTime));
+    let cons=0;
+    for (const d of doses) {
+      if(new Date(d.scheduledTime)>new Date()) continue;
+      const s=doseStatus(d);
+      if(s==='missed'||s==='skipped') cons++;
+      else break;
+    }
+    if(cons>=2) S.alerts.push({med:med.name,count:cons,severity:cons>=3?'high':'medium'});
+  });
+}
+
+// ── RENDER ──
+function g(id) { return document.getElementById(id); }
+function renderAll() {
+  detectAlerts();
+  const m=calcMetrics(), streak=calcStreak();
+  g('stat-adherence').textContent=m.adh+'%';
+  g('stat-upcoming').textContent=m.todayU;
+  g('stat-missed').textContent=m.todayM;
+  g('stat-streak').textContent=streak+' Days';
+  g('streak-badge').textContent='🔥 '+streak+' days';
+  g('missed-badge').textContent=m.missed;
+  const ab=g('adh-badge');
+  ab.textContent=m.adh+'%';
+  ab.style.background=m.adh>=80?'var(--green-bg)':'var(--red-bg)';
+  ab.style.color=m.adh>=80?'var(--green)':'var(--red)';
+  g('miss-badge2').textContent=m.todayM>0?'⚠'+m.todayM:'✓';
+  renderTimeline(); renderWeekly(); renderMonthly();
+  renderAlerts(); updateLogSelect();
+  renderDoseLog(); renderSchedule(); renderRx(); renderReports(); updateProfile();
+  save();
+}
+
+function renderTimeline() {
+  const now=new Date(), today=now.toDateString();
+  const doses=S.schedule.filter(d=>new Date(d.scheduledTime).toDateString()===today).sort((a,b)=>new Date(a.scheduledTime)-new Date(b.scheduledTime));
+  if(!doses.length) { g('today-timeline').innerHTML='<div class="empty-state"><div class="empty-icon">💊</div><div class="empty-text">No doses today.<br>Add a prescription to get started.</div></div>'; return; }
+  g('today-timeline').innerHTML = doses.map((d,i)=>{
+    const s=doseStatus(d), isLast=i===doses.length-1;
+    const log=S.logs.filter(l=>l.doseId===d.id).sort((a,b)=>new Date(b.loggedAt)-new Date(a.loggedAt))[0];
+    const styles={onTime:'background:var(--green-bg);color:var(--green)',late:'background:var(--orange-bg);color:var(--orange)',missed:'background:var(--red-bg);color:var(--red)',skipped:'background:var(--red-bg);color:var(--red)',upcoming:'background:var(--surface2);color:var(--text3)'};
+    const icons={onTime:'✔',late:'⏱',missed:'✕',skipped:'✕',upcoming:'◷'};
+    const tags={onTime:'tag-green',late:'tag-orange',missed:'tag-red',skipped:'tag-red',upcoming:'tag-gray'};
+    const labels={onTime:'Taken',late:'Late',missed:'Missed',skipped:'Skipped',upcoming:'Upcoming'};
+    const logTime=log?`<span class="tl-log-time">Logged ${fmtTime(new Date(log.loggedAt))}</span>`:'';
+    const retro=(s==='missed'||s==='skipped')?`<button class="link-btn" onclick="quickLog('${d.id}')">Log retroactively?</button>`:'';
+    return `<div class="tl-item${s==='upcoming'?' pulse':''}">
+      <div class="tl-left"><div class="tl-dot" style="${styles[s]||styles.upcoming}">${icons[s]||'◷'}</div>${!isLast?'<div class="tl-line"></div>':''}</div>
+      <div class="tl-content">
+        <div class="tl-header"><span class="tl-name">${d.name}</span><span class="tl-time">${fmtTime(new Date(d.scheduledTime))}</span></div>
+        <div class="tl-dose">${d.dosage}</div>
+        <div class="tl-footer"><span class="tag ${tags[s]||'tag-gray'}">${labels[s]||'Pending'}</span>${logTime}${retro}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderWeekly() {
+  const trend=calcWeekly();
+  g('weekly-chart').innerHTML=trend.map(d=>{
+    const color=d.isFuture?'var(--border)':d.pct>=80?'var(--accent)':d.pct>=50?'var(--orange)':'var(--red)';
+    const h=d.isFuture?6:Math.max(d.pct,4);
+    return `<div class="bar-wrap"><div class="bar-track"><div class="bar-fill" style="height:${h}%;background:${color}" data-v="${d.pct}%"></div></div></div>`;
+  }).join('');
+  g('weekly-labels').innerHTML=trend.map(d=>`<span style="font-size:10px;color:var(--text3);font-weight:500">${d.l}</span>`).join('');
+  const past=trend.filter(d=>!d.isFuture);
+  const avg=past.length?Math.round(past.reduce((a,b)=>a+b.pct,0)/past.length):0;
+  g('week-summary').textContent='Avg '+avg+'% this week';
+}
+
+function renderMonthly() {
+  const mb=calcMonthly();
+  const total=Math.max(mb.total,1);
+  g('perf-days').textContent=mb.perfect+'/'+mb.total;
+  g('perf-bar').style.width=Math.round(mb.perfect/total*100)+'%';
+  const ts=S.schedule.filter(d=>{const n=new Date(),dm=new Date(d.scheduledTime);return dm.getMonth()===n.getMonth()&&dm.getFullYear()===n.getFullYear();}).length;
+  const tmax=Math.max(ts,1);
+  g('late-doses').textContent=mb.late;
+  g('late-bar').style.width=Math.min(Math.round(mb.late/tmax*100)*4,100)+'%';
+  g('total-missed-month').textContent=mb.missed;
+  g('missed-bar').style.width=Math.min(Math.round(mb.missed/tmax*100)*4,100)+'%';
+}
+
+function renderAlerts() {
+  const c=g('alerts-container');
+  g('notif-dot').style.display=S.alerts.length>0?'block':'none';
+  if(!S.alerts.length){c.innerHTML='';return;}
+  c.innerHTML=S.alerts.map(a=>{
+    const hi=a.severity==='high';
+    const col=hi?'var(--red)':'var(--orange)';
+    return `<div class="alert-card ${hi?'alert-red':'alert-orange'}" style="margin-bottom:10px">
+      <div class="alert-top">
+        <span class="alert-icon">${hi?'🚨':'⚠'}</span>
+        <div>
+          <div class="alert-title" style="color:${col}">${hi?'Critical':'Adherence'} Alert</div>
+          <div class="alert-msg" style="color:${col}"><strong>${a.count}</strong> consecutive missed doses for <strong>${a.med}</strong>. ${hi?'Immediate action required.':'May affect treatment efficacy.'}</div>
+        </div>
+      </div>
+      <button class="alert-btn" style="color:${col};border-color:${col}" onclick="notifyPhysician('${a.med}')">Notify Physician →</button>
+    </div>`;
+  }).join('');
+}
+
+function updateLogSelect() {
+  const now=new Date(), today=now.toDateString();
+  const pending=S.schedule.filter(d=>new Date(d.scheduledTime).toDateString()===today&&(doseStatus(d)==='upcoming'||doseStatus(d)==='missed')).sort((a,b)=>new Date(a.scheduledTime)-new Date(b.scheduledTime));
+  const sel=g('log-select'), prev=sel.value;
+  sel.innerHTML='<option value="">— Select medication —</option>'+pending.map(d=>`<option value="${d.id}">${d.name} ${d.dosage} — ${fmtTime(new Date(d.scheduledTime))}</option>`).join('');
+  if(prev&&[...sel.options].find(o=>o.value===prev)) sel.value=prev;
+}
+
+function renderDoseLog() {
+  const filter=g('log-filter').value;
+  const now=new Date();
+  let entries=[...S.logs].sort((a,b)=>new Date(b.loggedAt)-new Date(a.loggedAt));
+  if(filter!=='all') entries=entries.filter(l=>filter==='skipped'?(l.status==='skipped'||l.status==='missed'):l.status===filter);
+  // Add auto-detected missed
+  if(filter==='all'||filter==='skipped') {
+    S.schedule.filter(d=>new Date(d.scheduledTime)<now&&!S.logs.some(l=>l.doseId===d.id)).forEach(d=>{
+      entries.push({id:uid(),doseId:d.id,status:'missed',loggedAt:new Date(d.scheduledTime),medName:d.name,medId:d.medId,auto:true});
+    });
+    entries.sort((a,b)=>new Date(b.loggedAt)-new Date(a.loggedAt));
+  }
+  if(!entries.length){g('doselog-list').innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">No entries found.</div></div>';return;}
+  const im={onTime:{i:'✔',bg:'var(--green-bg)',c:'var(--green)',t:'tag-green',l:'On Time'},late:{i:'⏱',bg:'var(--orange-bg)',c:'var(--orange)',t:'tag-orange',l:'Late'},skipped:{i:'✕',bg:'var(--red-bg)',c:'var(--red)',t:'tag-red',l:'Skipped'},missed:{i:'✕',bg:'var(--red-bg)',c:'var(--red)',t:'tag-red',l:'Missed'},other:{i:'?',bg:'var(--surface2)',c:'var(--text3)',t:'tag-gray',l:'Other'}};
+  g('doselog-list').innerHTML=entries.map(l=>{
+    const m=im[l.status]||im.other, dose=S.schedule.find(s=>s.id===l.doseId);
+    const name=l.medName||dose?.name||'—';
+    return `<div class="log-entry">
+      <div class="log-entry-icon" style="background:${m.bg};color:${m.c}">${m.i}</div>
+      <div class="log-entry-info">
+        <div class="log-entry-name">${name}${l.auto?' <span style="font-size:10px;color:var(--text3)">(auto-detected)</span>':''}</div>
+        <div class="log-entry-detail">${dose?dose.dosage+' · Sched. '+fmtTime(new Date(dose.scheduledTime)):''}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <span class="tag ${m.t}">${m.l}</span>
+        <div class="log-entry-time" style="margin-top:4px">${fmtTime(new Date(l.loggedAt))}<br>${fmtDate(new Date(l.loggedAt))}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderSchedule() {
+  const filter=g('schedule-filter').value, now=new Date();
+  let doses=S.schedule.filter(d=>{
+    const t=new Date(d.scheduledTime);
+    if(filter==='today') return t.toDateString()===now.toDateString();
+    if(filter==='week'){const diff=(t-now)/(86400000);return diff>=-1&&diff<=7;}
+    return t>=now;
+  }).sort((a,b)=>new Date(a.scheduledTime)-new Date(b.scheduledTime)).slice(0,150);
+  if(!doses.length){g('schedule-list').innerHTML='<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-text">No doses in this range.</div></div>';return;}
+  const styles={onTime:'background:var(--green-bg);color:var(--green)',late:'background:var(--orange-bg);color:var(--orange)',missed:'background:var(--red-bg);color:var(--red)',skipped:'background:var(--red-bg);color:var(--red)',upcoming:'background:var(--surface2);color:var(--text3)'};
+  const icons={onTime:'✔',late:'⏱',missed:'✕',skipped:'✕',upcoming:'◷'};
+  const tags={onTime:'tag-green',late:'tag-orange',missed:'tag-red',skipped:'tag-red',upcoming:'tag-gray'};
+  const labels={onTime:'Taken',late:'Late',missed:'Missed',skipped:'Skipped',upcoming:'Upcoming'};
+  g('schedule-list').innerHTML=doses.map((d,i)=>{
+    const s=doseStatus(d), isLast=i===doses.length-1;
+    return `<div class="tl-item">
+      <div class="tl-left"><div class="tl-dot" style="${styles[s]||styles.upcoming}">${icons[s]||'◷'}</div>${!isLast?'<div class="tl-line"></div>':''}</div>
+      <div class="tl-content">
+        <div class="tl-header"><span class="tl-name">${d.name} <span style="font-size:11px;color:var(--text3)">${d.dosage}</span></span><span class="tl-time">${fmtDate(new Date(d.scheduledTime))} ${fmtTime(new Date(d.scheduledTime))}</span></div>
+        <div class="tl-footer"><span class="tag ${tags[s]||'tag-gray'}">${labels[s]||'Pending'}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderRx() {
+  if(!S.medications.length){g('rx-grid').innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">💊</div><div class="empty-text">No prescriptions yet.<br>Click "Add Prescription" to begin.</div></div>';return;}
+  g('rx-grid').innerHTML=S.medications.map(med=>{
+    const doses=S.schedule.filter(d=>d.medId===med.id);
+    const taken=doses.filter(d=>{const s=doseStatus(d);return s==='onTime'||s==='late';}).length;
+    const total=doses.filter(d=>new Date(d.scheduledTime)<=new Date()).length;
+    const adh=total>0?Math.round(taken/total*100):0;
+    const col=adh>=80?'var(--green)':adh>=50?'var(--orange)':'var(--red)';
+    return `<div class="rx-card">
+      <div class="rx-name">${med.name}</div>
+      <div class="rx-dose">${med.dosage} · ${med.form}</div>
+      <div class="rx-meta">
+        <div class="rx-meta-item"><label>Frequency</label><span>${med.frequency}x/day</span></div>
+        <div class="rx-meta-item"><label>Duration</label><span>${med.duration} days</span></div>
+        <div class="rx-meta-item"><label>Start</label><span>${fmtDate(new Date(med.startDate+'T00:00:00'))}</span></div>
+        <div class="rx-meta-item"><label>Adherence</label><span style="color:${col};font-weight:700">${adh}%</span></div>
+      </div>
+      ${med.instructions?`<div style="font-size:11.5px;color:var(--text3);margin-bottom:9px;font-style:italic">📝 ${med.instructions}</div>`:''}
+      <div style="font-size:11.5px;color:var(--text2);margin-bottom:9px">⏰ ${med.times.map(fmtTime).join(' · ')}</div>
+      <div style="background:var(--surface2);border-radius:5px;height:5px;margin-bottom:10px"><div style="height:100%;border-radius:5px;background:${col};width:${adh}%;transition:width .8s"></div></div>
+      <div class="rx-actions">
+        ${!med.locked?`<button class="btn btn-primary btn-sm" onclick="lockRx('${med.id}')">🔒 Lock</button>`:''}
+        <button class="btn btn-ghost btn-sm" onclick="deleteRx('${med.id}')">🗑</button>
+        ${med.locked?`<span class="rx-locked">🔒 Locked & Active</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderReports() {
+  const m=calcMetrics(), streak=calcStreak(), mb=calcMonthly();
+  g('report-stats').innerHTML=`
+    <div class="report-stat"><div class="report-stat-value">${m.adh}%</div><div class="report-stat-label">Overall Adherence</div></div>
+    <div class="report-stat"><div class="report-stat-value">${streak}</div><div class="report-stat-label">Current Streak (days)</div></div>
+    <div class="report-stat"><div class="report-stat-value">${mb.perfect}</div><div class="report-stat-label">Perfect Days (month)</div></div>`;
+  g('med-adherence-list').innerHTML=S.medications.map(med=>{
+    const doses=S.schedule.filter(d=>d.medId===med.id);
+    const taken=doses.filter(d=>{const s=doseStatus(d);return s==='onTime'||s==='late';}).length;
+    const total=doses.filter(d=>new Date(d.scheduledTime)<=new Date()).length;
+    const adh=total>0?Math.round(taken/total*100):0;
+    const col=adh>=80?'var(--green)':adh>=50?'var(--orange)':'var(--red)';
+    return `<div class="med-ad-item">
+      <div class="med-ad-header"><span class="med-ad-name">${med.name} <span style="font-size:12px;color:var(--text2);font-weight:400">${med.dosage}</span></span><span class="med-ad-pct" style="color:${col}">${adh}%</span></div>
+      <div style="background:var(--surface2);border-radius:5px;height:6px"><div style="height:100%;border-radius:5px;background:${col};width:${adh}%;transition:width .8s"></div></div>
+      <div style="font-size:11.5px;color:var(--text3);margin-top:7px">${taken} taken of ${total} scheduled</div>
+    </div>`;
+  }).join('')||'<div class="empty-state"><div class="empty-icon">💊</div><div class="empty-text">No medications added yet.</div></div>';
+  g('safety-summary').innerHTML=S.alerts.length===0
+    ?'<div style="color:var(--green);font-size:13.5px;font-weight:600">✔ No active safety alerts</div>'
+    :S.alerts.map(a=>`<div style="color:${a.severity==='high'?'var(--red)':'var(--orange)'};font-size:13px;font-weight:500;margin-bottom:7px">${a.severity==='high'?'🚨':'⚠'} ${a.count} consecutive missed doses for <strong>${a.med}</strong></div>`).join('');
+}
+
+function updateProfile() {
+  g('sidebar-username').textContent=S.profile.name;
+  g('sidebar-patientid').textContent='Patient ID: '+S.profile.patientId;
+  g('avatar-initials').textContent=S.profile.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+  g('setting-name').value=S.profile.name;
+  g('setting-id').value=S.profile.patientId;
+}
+
+// ── ACTIONS ──
+let selStatus=null;
+function selectStatus(el) {
+  document.querySelectorAll('.status-opt').forEach(o=>o.classList.remove('selected'));
+  el.classList.add('selected'); selStatus=el.dataset.status;
+}
+function confirmLog() {
+  if(S.caregiverMode){toast('Caregiver mode: read-only','⚠');return;}
+  const doseId=g('log-select').value;
+  if(!doseId){toast('Please select a medication','⚠');return;}
+  if(!selStatus){toast('Please select a status','⚠');return;}
+  const dose=S.schedule.find(d=>d.id===doseId);
+  if(!dose) return;
+  S.logs=S.logs.filter(l=>l.doseId!==doseId);
+  S.logs.push({id:uid(),doseId,status:selStatus,loggedAt:new Date(),medId:dose.medId,medName:dose.name});
+  toast('Logged as '+selStatus, selStatus==='onTime'?'✔':'⏱');
+  selStatus=null;
+  document.querySelectorAll('.status-opt').forEach(o=>o.classList.remove('selected'));
+  renderAll();
+}
+function quickLog(doseId) {
+  g('log-select').value=doseId;
+  g('log-select').closest('.log-panel')?.scrollIntoView({behavior:'smooth'});
+}
+function openAddRx() {
+  if(S.caregiverMode){toast('Caregiver mode: read-only','⚠');return;}
+  g('rx-start').value=new Date().toISOString().split('T')[0];
+  openModal('rx-modal');
+}
+function addPrescription() {
+  if(S.caregiverMode){toast('Caregiver mode: read-only','⚠');return;}
+  const name=g('rx-name').value.trim(), dosage=g('rx-dosage').value.trim();
+  const freq=parseInt(g('rx-freq').value), duration=parseInt(g('rx-duration').value);
+  const startDate=g('rx-start').value, time=g('rx-time').value;
+  if(!name||!dosage||!freq||!duration||!startDate||!time){toast('Fill all required fields','⚠');return;}
+  const med={id:'med_'+uid(),name,dosage,form:g('rx-form').value,frequency:freq,duration,startDate,times:computeTimes(freq,time),instructions:g('rx-instructions').value.trim(),locked:false};
+  S.medications.push(med); genSchedule(med);
+  closeModal('rx-modal'); toast('Prescription added & schedule generated','✔');
+  renderAll(); navigate('prescriptions');
+}
+function lockRx(id) {
+  const m=S.medications.find(m=>m.id===id);
+  if(m){m.locked=true;save();renderRx();toast('Prescription locked','🔒');}
+}
+function deleteRx(id) {
+  if(!confirm('Remove this prescription and all its doses?')) return;
+  S.medications=S.medications.filter(m=>m.id!==id);
+  S.schedule=S.schedule.filter(s=>s.medId!==id);
+  S.logs=S.logs.filter(l=>l.medId!==id);
+  save(); renderAll(); toast('Removed','🗑');
+}
+function notifyPhysician(med) { toast('Physician notified about '+med,'📨'); }
+function saveProfile() {
+  const n=g('setting-name').value.trim(), i=g('setting-id').value.trim();
+  if(n) S.profile.name=n; if(i) S.profile.patientId=i;
+  save(); updateProfile(); toast('Profile saved','✔');
+}
+function toggleTheme() {
+  const html=document.documentElement, dark=html.getAttribute('data-theme')==='dark';
+  html.setAttribute('data-theme',dark?'light':'dark');
+  g('theme-btn').textContent=dark?'🌙':'☀';
+  g('dark-toggle').classList.toggle('on',!dark);
+  localStorage.setItem('mt_theme',dark?'light':'dark');
+}
+function toggleCaregiver(btn) {
+  btn.classList.toggle('on'); S.caregiverMode=btn.classList.contains('on');
+  toast(S.caregiverMode?'Caregiver mode ON (read-only)':'Caregiver mode OFF','👁');
+}
+function clearData() {
+  if(!confirm('Clear ALL data?')) return;
+  S.medications=[];S.schedule=[];S.logs=[];S.alerts=[];
+  localStorage.removeItem('mt3'); renderAll(); toast('All data cleared','🗑');
+}
+function printReport() {
+  const m=calcMetrics(),streak=calcStreak(),mb=calcMonthly();
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>MedTrack Report</title>
+  <style>body{font-family:sans-serif;padding:40px;max-width:700px;margin:0 auto;color:#1a1714}h1{color:#D4550A;font-size:24px}h2{margin-top:24px;font-size:16px;color:#555}table{width:100%;border-collapse:collapse;margin:14px 0}td,th{padding:8px 12px;border:1px solid #ddd;text-align:left;font-size:13px}th{background:#f5f3ef;font-weight:600}</style></head><body>
+  <h1>MedTrack — Adherence Report</h1>
+  <p><strong>Patient:</strong> ${S.profile.name} (ID: ${S.profile.patientId})</p>
+  <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+  <h2>Summary</h2>
+  <table><tr><th>Metric</th><th>Value</th></tr>
+  <tr><td>Overall Adherence</td><td>${m.adh}%</td></tr>
+  <tr><td>Current Streak</td><td>${streak} days</td></tr>
+  <tr><td>Perfect Days (month)</td><td>${mb.perfect}</td></tr>
+  <tr><td>Late Doses (month)</td><td>${mb.late}</td></tr>
+  <tr><td>Missed Doses (month)</td><td>${mb.missed}</td></tr>
+  </table>
+  <h2>Medications</h2>
+  <table><tr><th>Drug</th><th>Dosage</th><th>Form</th><th>Frequency</th><th>Instructions</th></tr>
+  ${S.medications.map(x=>`<tr><td>${x.name}</td><td>${x.dosage}</td><td>${x.form}</td><td>${x.frequency}x/day</td><td>${x.instructions||'—'}</td></tr>`).join('')}
+  </table>
+  <h2>Safety Alerts</h2>
+  ${S.alerts.length?S.alerts.map(a=>`<p>${a.severity==='high'?'🚨':'⚠'} ${a.count} consecutive missed doses for ${a.med}</p>`).join(''):'<p>No active safety alerts.</p>'}
+  </body></html>`);
+  w.document.close(); w.print();
+}
+
+// ── NAV ──
+function navigate(view) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const v=g('view-'+view); if(v) v.classList.add('active');
+  const n=document.querySelector(`[data-view="${view}"]`); if(n) n.classList.add('active');
+  const titles={dashboard:'Dashboard',prescriptions:'Prescriptions',schedule:'Schedule',doselog:'Dose Log',reports:'Reports',settings:'Settings'};
+  g('header-title').textContent=titles[view]||view;
+  if(view==='schedule') renderSchedule();
+  if(view==='doselog') renderDoseLog();
+  if(view==='reports') renderReports();
+  if(view==='prescriptions') renderRx();
+}
+document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click',()=>navigate(n.dataset.view)));
+
+// ── MODAL ──
+function openModal(id){g(id).classList.remove('hidden');}
+function closeModal(id){g(id).classList.add('hidden');}
+g('rx-modal').addEventListener('click',function(e){if(e.target===this)closeModal('rx-modal');});
+
+// ── TOAST ──
+function toast(msg,icon='ℹ'){
+  const t=document.createElement('div'); t.className='toast';
+  t.innerHTML=`<span class="toast-icon">${icon}</span><span>${msg}</span>`;
+  g('toast-container').appendChild(t);
+  setTimeout(()=>{t.classList.add('removing');setTimeout(()=>t.remove(),300);},3000);
+}
+
+// ── SEARCH ──
+g('search-input').addEventListener('input',function(){
+  const q=this.value.toLowerCase().trim(); if(!q) return;
+  const found=S.medications.find(m=>m.name.toLowerCase().includes(q));
+  if(found){navigate('prescriptions');toast('Found: '+found.name,'🔍');}
+});
+
+// ── FILTERS ──
+g('schedule-filter').addEventListener('change',renderSchedule);
+g('log-filter').addEventListener('change',renderDoseLog);
+
+// ── THEME ──
+g('theme-btn').addEventListener('click',toggleTheme);
+
+// ── REMINDER SIM ──
+setInterval(()=>{
+  if(!g('reminder-toggle').classList.contains('on')) return;
+  const now=new Date();
+  S.schedule.forEach(d=>{
+    const t=new Date(d.scheduledTime), diff=(t-now)/60000;
+    if(diff>0&&diff<=30&&doseStatus(d)==='upcoming') toast(`⏰ ${d.name} in ${Math.round(diff)} min`,'⏰');
+  });
+},300000);
+
+// ── INIT ──
+load();
+g('rx-start').value=new Date().toISOString().split('T')[0];
+const savedTheme=localStorage.getItem('mt_theme');
+if(savedTheme==='dark'){document.documentElement.setAttribute('data-theme','dark');g('theme-btn').textContent='☀';g('dark-toggle').classList.add('on');}
+renderAll();
+</script>
+</body>
+</html>
+..
